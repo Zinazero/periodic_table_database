@@ -21,7 +21,6 @@ INNER JOIN properties USING (atomic_number) INNER JOIN types USING (type_id) WHE
         echo "The element with atomic number $1 is $NAME ($SYMBOL). It's a $TYPE, with a mass of $MASS amu. $NAME has a melting point of $MELT celsius and a boiling point of $BOIL celsius."
       done
     fi
-    
   #else if symbol
   elif [[ $1 =~ ^[a-zA-Z]$ ]]
   then
@@ -40,8 +39,23 @@ INNER JOIN properties USING (atomic_number) INNER JOIN types USING (type_id) WHE
         echo "The element with atomic number $ATOMIC_NUMBER is $NAME ($1). It's a $TYPE, with a mass of $MASS amu. $NAME has a melting point of $MELT celsius and a boiling point of $BOIL celsius."
       done
     fi
+  #else if word (string longer than 1 character)
   else
-    echo "This is a string."
+    #check if string matches name in database
+    NAME_RESULT=$($PSQL "SELECT atomic_number, symbol, type, atomic_mass, melting_point_celsius, boiling_point_celsius FROM elements
+INNER JOIN properties USING (atomic_number) INNER JOIN types USING (type_id) WHERE name = '$1'")
+
+    if [[ -z $NAME_RESULT ]]
+    then
+      #if not found
+      echo "I could not find that element in the database."
+    else
+      #if found
+      echo $"$NAME_RESULT" | while IFS='|' read ATOMIC_NUMBER SYMBOL TYPE MASS MELT BOIL
+      do
+        echo "The element with atomic number $ATOMIC_NUMBER is $1 ($SYMBOL). It's a $TYPE, with a mass of $MASS amu. $1 has a melting point of $MELT celsius and a boiling point of $BOIL celsius."
+      done
+    fi
   fi
 else
   echo "Please provide an element as an argument."
